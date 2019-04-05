@@ -1,7 +1,6 @@
 PackageMojo提供了一键部署的功能，在pom中配置好服务器相关信息即可，使用：
-将本插件安装到本地仓库，在需要使用的项目的pom文件引入一下插件
-自定义打包插件，打包完成可以自动上传服务器<br>
-<build>
+将本插件安装到本地仓库，在需要使用的项目的pom文件引入以下插件
+&gt;build>
 	<plugins>
 		<plugin>
 			<groupId>com.ajie</groupId>
@@ -33,3 +32,4 @@ PackageMojo提供了一键部署的功能，在pom中配置好服务器相关信
 </configuration>
 但是，需要注意的是，serverFile指向的配置文件不是放在需要运行的项目，而是放在本插件的项目里
 运行插件：custom:package（debug模式：custom:package -X）
+
