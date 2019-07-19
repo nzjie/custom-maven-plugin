@@ -44,7 +44,7 @@ import com.ajie.custom.maven.plugin.vo.Server;
 public class PackageMojo extends AbstractCustomMojo {
 
 	public void execute() throws MojoExecutionException, MojoFailureException {
-		getLog().info("start package ...");
+		getLog().info("start package");
 		packageProject();
 	}
 
@@ -53,12 +53,21 @@ public class PackageMojo extends AbstractCustomMojo {
 		String cmd = mvn + " package";
 		ExecuteUtil.execute(cmd, getLog());
 		getLog().info("package success");
-		Server server = getServer();
+		Server server = null;
+		try {
+			server = getServer();
+		} catch (MojoFailureException e) {
+			getLog().info(
+					" ------------------------------------------------------------------------");
+			getLog().error("package success but upload fail", e);
+			return;
+		}
 		if (null == server)
 			return;
 		if (!server.isUpload())
 			return;
-		getLog().info("start upload file to server");
+		getLog().info(" ------------------------------------------------------------------------");
+		getLog().info("start upload file to server [" + server.getHost() + "]");
 		if (getLog().isDebugEnabled()) {
 			getLog().debug(server.toString());
 		}
@@ -67,6 +76,7 @@ public class PackageMojo extends AbstractCustomMojo {
 				getLog());
 		long end = System.currentTimeMillis();
 		getLog().info("upload success, time consuming: " + (end - start) / 1000 + "s");
+		getLog().info(" ------------------------------------------------------------------------");
 		getLog().info("exec remote deploy script");
 		start = System.currentTimeMillis();
 		ExecuteUtil.execute(getServer(), getProjectName(), getLog());

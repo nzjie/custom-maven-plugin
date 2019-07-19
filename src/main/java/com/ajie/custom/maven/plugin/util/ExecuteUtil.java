@@ -11,7 +11,6 @@ import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugin.logging.Log;
 
 import com.ajie.custom.maven.plugin.vo.Server;
-import com.jcraft.jsch.Channel;
 import com.jcraft.jsch.ChannelExec;
 import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.Session;
@@ -116,7 +115,7 @@ public final class ExecuteUtil {
 			if (log.isDebugEnabled()) {
 				String line = null;
 				while ((line = reader.readLine()) != null) {
-					log.info(new String(line.getBytes("utf-8"), "utf-8"));
+					log.debug(new String(line.getBytes()));
 				}
 			}
 		} catch (Exception e) {

@@ -43,7 +43,7 @@ public abstract class AbstractCustomMojo extends AbstractMojo {
 	protected Server server;
 	/**
 	 * 服务器信息配置文件路径，该配置文件只能读取custom-maven-plugin项目下面的，不能读取待打包项目的路径，
-	 * 使用相对classpath路径，和server二选一，如果两个都配置，最终读取serverFile里的信息
+	 * 使用相对classpath路径，和server二选一，如果两个都配置，最终读取server里的信息
 	 */
 	@Parameter
 	protected String serverFile;
@@ -155,6 +155,9 @@ public abstract class AbstractCustomMojo extends AbstractMojo {
 	}
 
 	public Server getServer() throws MojoFailureException {
+		// 单例，不存在并发，不需要锁
+		if (null != server)
+			return server;
 		if (null == serverFile)
 			return server;
 		InputStream is = Thread.currentThread().getContextClassLoader()

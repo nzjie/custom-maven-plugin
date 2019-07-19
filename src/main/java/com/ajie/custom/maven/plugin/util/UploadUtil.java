@@ -74,13 +74,24 @@ final public class UploadUtil {
 			out = sftp.put(folder + fileName);
 			byte[] buf = new byte[1024];
 			int n = 0;
+			int available = in.available();
+			int per = available / 1024 / 10;
+			int i = 0;
+			System.out.print("[INFO] uploading ");
 			while ((n = in.read(buf)) != -1) {
+				if (per > 0) {
+					if (i % per == 0) {
+						System.out.print(". ");
+					}
+				}
 				out.write(buf, 0, n);
+				i++;
 			}
+			System.out.println();
 			out.flush();
 			out.close();
 		} catch (Exception e) {
-			log.error("打包成功，上传失败", e);
+			throw new MojoFailureException("上传失败",e);
 		} finally {
 			try {
 				if (null != in)

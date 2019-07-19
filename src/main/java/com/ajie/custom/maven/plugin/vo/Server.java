@@ -1,7 +1,7 @@
 package com.ajie.custom.maven.plugin.vo;
 
 /**
- * 服务器信息，如果使用文件加载，在首次获取使用server时，需要调用init
+ * 服务器信息
  *
  * @author niezhenjie
  *
@@ -95,9 +95,8 @@ public class Server {
 		StringBuilder sb = new StringBuilder();
 		sb.append("{host:").append(host).append(",");
 		sb.append("username:").append(username).append(",");
-		sb.append("password:").append(password).append(",");
 		sb.append("isupload:").append(isupload).append(",");
-		sb.append("uploadBasePath:").append(uploadBasePath).append("}");
+		sb.append("uploadBasePath:").append(getUploadBasePath()).append("}");
 		return sb.toString();
 	}
 
