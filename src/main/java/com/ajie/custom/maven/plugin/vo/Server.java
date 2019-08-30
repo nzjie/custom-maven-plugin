@@ -21,7 +21,10 @@ public class Server {
 	private int port;
 	/** 是否上传 */
 	private boolean isupload;
-	/** 上传至服务器路径，最终文件会上传至uploadpath+projectName路径 */
+	/**
+	 * 上传至服务器路径，最终文件会上传至uploadpath+projectName路径，如uploadBasePath：/var/www/
+	 * ,projectName: blog，最后项目上传到/var/www/blog文件夹下
+	 */
 	private String uploadBasePath;
 
 	public Server() {
@@ -64,7 +67,7 @@ public class Server {
 		return DEFAULT_PORT;
 	}
 
-	public void setIsUpload(boolean b) {
+	public void setUpload(boolean b) {
 		isupload = b;
 	}
 
@@ -98,6 +101,53 @@ public class Server {
 		sb.append("isupload:").append(isupload).append(",");
 		sb.append("uploadBasePath:").append(getUploadBasePath()).append("}");
 		return sb.toString();
+	}
+
+	public static class ServerBuilder {
+		Server server;
+
+		private ServerBuilder(Server server) {
+			this.server = server;
+		}
+
+		public static ServerBuilder getBuilder() {
+			ServerBuilder builder = new ServerBuilder(new Server());
+			return builder;
+		}
+
+		public ServerBuilder setHost(String host) {
+			server.host = host;
+			return this;
+		}
+
+		public ServerBuilder setPort(int port) {
+			server.port = port;
+			return this;
+		}
+
+		public ServerBuilder setUsername(String name) {
+			server.username = name;
+			return this;
+		}
+
+		public ServerBuilder setPassword(String password) {
+			server.password = password;
+			return this;
+		}
+
+		public ServerBuilder setUpload(boolean b) {
+			server.isupload = b;
+			return this;
+		}
+
+		public ServerBuilder setUploadBasePath(String path) {
+			server.uploadBasePath = path;
+			return this;
+		}
+
+		public Server build() {
+			return server;
+		}
 	}
 
 }

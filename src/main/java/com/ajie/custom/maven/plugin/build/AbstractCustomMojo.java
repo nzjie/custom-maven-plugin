@@ -38,7 +38,14 @@ public abstract class AbstractCustomMojo extends AbstractMojo {
 
 	@Parameter(property = "project")
 	protected MavenProject project;
-	/** 服务器信息，和serverFile二选一，如果两个都配置，最终读取serverFile里的信息 */
+
+	/**
+	 * 服务器信息，对应pom文件的server节点（pom文件的节点在configuration节点下面可以实现自定义，其他地方需要遵循dtd，
+	 * 所以在其他地方自定义的话会报错）
+	 * 
+	 * 服务器地址有删除可以指定：1.custom-maven-plugin项目的server.properties配置，2.项目的pom文件，3.
+	 * 运行时的debug configurations配置，优先级：3>2>1
+	 */
 	@Parameter
 	protected Server server;
 	/**
@@ -59,11 +66,10 @@ public abstract class AbstractCustomMojo extends AbstractMojo {
 	private String projectType;
 
 	public String getMavenHome() {
-		/*// 启动时通过参数传入
-		String home = System.getProperty(MAVEN_HOME_KEY);
-		if (!StringUtils.isEmpty(home)) {
-			return home;
-		}*/
+		/*
+		 * // 启动时通过参数传入 String home = System.getProperty(MAVEN_HOME_KEY); if
+		 * (!StringUtils.isEmpty(home)) { return home; }
+		 */
 		// pom文件中配置
 		String home = project.getProperties().getProperty(MAVEN_HOME_KEY);
 		if (null != home) {
@@ -113,6 +119,26 @@ public abstract class AbstractCustomMojo extends AbstractMojo {
 		this.server = server;
 	}
 
+	/*
+	 * public Server getServerNotNull() { if (null == server) { server = new
+	 * Server(); } return server; } public void setServerHost(String host) {
+	 * getServerNotNull().setHost(host); }
+	 * 
+	 * public void setServerPort(int port) { getServerNotNull().setPort(port); }
+	 * 
+	 * public void setServerUserName(String userName) {
+	 * getServerNotNull().setUserName(userName); }
+	 * 
+	 * public void setServerPassword(String password) {
+	 * getServerNotNull().setPassword(password); }
+	 * 
+	 * public void setServerUploadBasePath(String path) {
+	 * getServerNotNull().setUploadBasePath(path); }
+	 * 
+	 * public void setServerUpload(boolean isupload) {
+	 * getServerNotNull().setUpload(isupload); }
+	 */
+
 	/**
 	 * 项目目录，结束符为"/" ,因为在eclipse运行，所以user.dir始终指向项目路径
 	 * 
@@ -154,8 +180,17 @@ public abstract class AbstractCustomMojo extends AbstractMojo {
 		return projectType;
 	}
 
+	/**
+	 * 单例，不存在并发，不需要锁
+	 * 
+	 * @return
+	 * @throws MojoFailureException
+	 */
 	public Server getServer() throws MojoFailureException {
-		// 单例，不存在并发，不需要锁
+		if (null != (server = getConfigServer())) {
+			return server;
+		}
+
 		if (null != server)
 			return server;
 		if (null == serverFile)
@@ -168,44 +203,90 @@ public abstract class AbstractCustomMojo extends AbstractMojo {
 		try {
 			prop.load(is);
 		} catch (IOException e) {
-			throw new MojoFailureException("无法加载配置文件，serverFile=" + serverFile, e);
+			throw new MojoFailureException("无法加载配置文件，serverFile=" + serverFile,
+					e);
 		}
 		String host = prop.getProperty("host");
 		String username = prop.getProperty("username");
 		String password = prop.getProperty("password");
 		String sPort = prop.getProperty("port");
-		String sIsupload = prop.getProperty("isupload");
+		String sIsupload = prop.getProperty("upload");
+		String path = prop.getProperty("uploadBasePath");
 		if (null == host)
 			throw new MojoFailureException("主机为空，host=" + host);
 		if (null == username)
 			throw new MojoFailureException("用户名为空，username=" + username);
-		int port = 0;
+		int port = Server.DEFAULT_PORT;
 		try {
 			port = Integer.valueOf(sPort);
 		} catch (Exception e) {
-			getLog().warn("无法解析端口：" + sPort + "，使用默认端口代替port:" + port);
-			port = Server.DEFAULT_PORT;
+			getLog().warn("无法解析端口：" + sPort + "，使用默认端口代替port:" + Server.DEFAULT_PORT);
 		}
-		boolean isUpload = false;
-		try {
-			isUpload = Boolean.valueOf(sIsupload);
-		} catch (Exception e) {
-			if ("true".equalsIgnoreCase(sIsupload))
-				isUpload = true;
-			else if ("false".equalsIgnoreCase(sIsupload))
-				isUpload = false;
-			else {
-				getLog().warn("无法判断是否上传，sIsupload：" + sIsupload + "，默认不上传");
-				isUpload = false;
+		boolean isUpload = true;
+		if (null != sIsupload) {
+			try {
+				isUpload = Boolean.valueOf(sIsupload);
+			} catch (Exception e) {
+				if ("true".equalsIgnoreCase(sIsupload))
+					isUpload = true;
+				else if ("false".equalsIgnoreCase(sIsupload))
+					isUpload = false;
+				else {
+					getLog().warn("无法判断是否上传，sIsupload：" + sIsupload + "，默认不上传");
+					isUpload = false;
+				}
+
+			}
+		}
+		if (null == path) {
+			path = Server.DEFAULT_UPLOAD_PATH;
+		}
+		Server.ServerBuilder builder = Server.ServerBuilder.getBuilder();
+		this.server = builder.setHost(host).setPort(port).setUsername(username)
+				.setPassword(password).setUpload(isUpload)
+				.setUploadBasePath(path).build();
+		return this.server;
+	}
+
+	/**
+	 * 获取通过启动配置设置的服务器信息
+	 * 
+	 * @return
+	 */
+	private Server getConfigServer() {
+		String host = System.getProperty("serverHost");
+		int port = Server.DEFAULT_PORT;
+		String sport = System.getProperty("serverPort");
+		if (null != sport) {
+			try {
+				port = Integer.valueOf(sport);
+			} catch (Exception e) {
+				getLog().warn("无法解析端口：" + sport + "，使用默认端口代替port:" + Server.DEFAULT_PORT);
 			}
 
 		}
-		Server server = new Server();
-		server.setHost(host);
-		server.setUserName(username);
-		server.setPassword(password);
-		server.setPort(port);
-		server.setIsUpload(isUpload);
-		return server;
+		String username = System.getProperty("serverUsername");
+		String password = System.getProperty("serverPassword");
+		boolean upload = true;// 默认上传
+		String supload = System.getProperty("upload");
+		if (null != supload) {
+			try {
+				upload = Boolean.valueOf(supload);
+			} catch (Exception e) {
+				getLog().warn("无法判断是否上传，sIsupload：" + supload + "，默认不上传");
+				upload = false;
+			}
+		}
+		String path = System.getProperty("serverUploadBasePath");
+		if (null == path) {
+			path = Server.DEFAULT_UPLOAD_PATH;
+		}
+		if (null == host || null == username) {
+			return null;
+		}
+		Server.ServerBuilder builder = Server.ServerBuilder.getBuilder();
+		return builder.setHost(host).setPort(port).setUsername(username)
+				.setPassword(password).setUpload(upload)
+				.setUploadBasePath(path).build();
 	}
 }

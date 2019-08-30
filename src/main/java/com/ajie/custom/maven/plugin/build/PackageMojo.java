@@ -12,30 +12,30 @@ import com.ajie.custom.maven.plugin.vo.Server;
  * 自定义打包插件，打包完成可以自动上传服务器<br>
  * pom配置：<br>
  * <build>
-		<plugins>
-			<plugin>
-				<groupId>com.ajie</groupId>
-				<artifactId>custom-maven-plugin</artifactId>
-				<version>1.0.10</version>
-				<executions>
-					<execution>
-						<goals>
-							<goal>install</goal>
-						</goals>
-					</execution>
-				</executions>
-				<configuration>
-					<server>
-						<host>www.ajie.top</host>
-						<username>ajie</username>
-						<password>123</password>
-						<port>22</port>
-						<isupload>true</isupload>
-					</server>
-				</configuration>
-			</plugin>
-		</plugins>
-	</build>
+ <plugins>
+ <plugin>
+ <groupId>com.ajie</groupId>
+ <artifactId>custom-maven-plugin</artifactId>
+ <version>1.0.10</version>
+ <executions>
+ <execution>
+ <goals>
+ <goal>install</goal>
+ </goals>
+ </execution>
+ </executions>
+ <configuration>
+ <server>
+ <host>www.ajie.top</host>
+ <username>ajie</username>
+ <password>123</password>
+ <port>22</port>
+ <upload>true</upload>
+ </server>
+ </configuration>
+ </plugin>
+ </plugins>
+ </build>
  *
  * @author niezhenjie
  *
@@ -66,23 +66,29 @@ public class PackageMojo extends AbstractCustomMojo {
 			return;
 		if (!server.isUpload())
 			return;
-		getLog().info(" ------------------------------------------------------------------------");
-		getLog().info("start upload file to server [" + server.getHost() + "]");
+		getLog().info(
+				" ------------------------------------------------------------------------");
+		getLog().info(
+				"start upload file to server [" + server.getHost() + ":"
+						+ server.getPort() + "]");
 		if (getLog().isDebugEnabled()) {
 			getLog().debug(server.toString());
 		}
 		long start = System.currentTimeMillis();
-		UploadUtil.upload(getTargetFilePath(), getProjectName() + "." + getProjectType(), server,
-				getLog());
+		UploadUtil.upload(getTargetFilePath(), getProjectName() + "."
+				+ getProjectType(), server, getLog());
 		long end = System.currentTimeMillis();
-		getLog().info("upload success, time consuming: " + (end - start) / 1000 + "s");
-		getLog().info(" ------------------------------------------------------------------------");
+		getLog().info(
+				"upload success, time consuming: " + (end - start) / 1000 + "s");
+		getLog().info(
+				" ------------------------------------------------------------------------");
 		getLog().info("exec remote deploy script");
 		start = System.currentTimeMillis();
 		ExecuteUtil.execute(getServer(), getProjectName(), getLog());
 		end = System.currentTimeMillis();
 		getLog().info(
-				"exec remote deploy script success,time consuming: " + (end - start) / 1000 + "s");
+				"exec remote deploy script success,time consuming: "
+						+ (end - start) / 1000 + "s");
 		getLog().info("done");
 	}
 
